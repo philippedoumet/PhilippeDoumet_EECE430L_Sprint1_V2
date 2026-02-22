@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>USD ↔ LBP Exchange</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 py-10">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold">USD ↔ LBP Exchange (Unofficial Rate)</h1>
+        <p class="text-slate-300 mt-2">JWT auth, stats, P2P marketplace, alerts, and notifications.</p>
+      </div>
+      <div id="userRoleBadge" class="hidden rounded bg-fuchsia-600 px-3 py-1 text-sm font-bold tracking-wider">
+        ADMIN
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap gap-2">
+      <button id="tabDashboard" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold">Dashboard</button>
+      <button id="tabStats" class="rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2 font-semibold">Stats</button>
+      <button id="tabP2P" class="rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2 font-semibold">P2P marketplace</button>
+      <button id="tabAlerts" class="rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2 font-semibold">Alerts</button>
+      <button id="tabWatchlist" class="rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2 font-semibold">Watchlist</button>
+      <button id="tabNotifications" class="rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2 font-semibold hidden flex items-center gap-2">
+        Notifications <span id="notifBadge" class="hidden bg-rose-500 text-white text-xs px-2 py-0.5 rounded-full">!</span>
+      </button>
+      <button id="tabLogs" class="rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2 font-semibold hidden">My Logs</button>
+      <button id="tabPrefs" class="rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2 font-semibold hidden">Preferences</button>
+      <button id="tabAdmin" class="rounded-xl bg-rose-800 hover:bg-rose-700 px-4 py-2 font-semibold hidden">Admin Panel</button>
+    </div>
+
+    <div id="dashboardView">
+      
+      <div class="grid md:grid-cols-2 gap-6 mt-8">
+        
+        <div id="authContainer" class="space-y-6">
+          <div class="bg-slate-900 rounded-2xl p-6 shadow">
+            <h2 class="text-xl font-semibold">Register</h2>
+            <div class="mt-4 space-y-3">
+              <input id="regEmail" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Email" />
+              <input id="regPass" type="password" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Password (min 6 chars)" />
+              <div class="flex items-center gap-2 px-1">
+                <input type="checkbox" id="regAdmin" class="w-4 h-4 cursor-pointer">
+                <label for="regAdmin" class="text-sm cursor-pointer text-slate-300">Register as System Admin</label>
+              </div>
+              <button id="btnRegister" class="w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 font-semibold">Create account</button>
+              <p id="regMsg" class="text-sm text-slate-300"></p>
+            </div>
+          </div>
+          <div class="bg-slate-900 rounded-2xl p-6 shadow">
+            <h2 class="text-xl font-semibold">Login</h2>
+            <div class="mt-4 space-y-3">
+              <input id="logEmail" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Email" />
+              <input id="logPass" type="password" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Password" />
+              <button id="btnLogin" class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 font-semibold">Login</button>
+              <div class="flex items-center gap-3">
+                <button id="btnLogout" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold">Logout</button>
+                <span id="authState" class="text-sm text-slate-300">Not logged in</span>
+              </div>
+              <p id="logMsg" class="text-sm text-slate-300"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 rounded-2xl p-6 shadow h-fit border border-indigo-500/30">
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-semibold">My Wallet</h2>
+            <button id="btnRefreshWallet" class="rounded-xl bg-slate-800 hover:bg-slate-700 px-3 py-1 font-semibold text-sm">Refresh</button>
+          </div>
+          <p class="text-slate-400 text-sm mt-1">Real-time balances used for atomic transactions.</p>
+          <div class="mt-6 space-y-4">
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+              <p class="text-slate-400 text-sm font-semibold uppercase tracking-wider">USD Balance</p>
+              <p id="walUsd" class="text-3xl font-bold font-mono text-emerald-400 mt-1">$-.--</p>
+            </div>
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+              <p class="text-slate-400 text-sm font-semibold uppercase tracking-wider">LBP Balance</p>
+              <p id="walLbp" class="text-3xl font-bold font-mono text-amber-400 mt-1">- LBP</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6 mt-8">
+        <div class="bg-slate-900 rounded-2xl p-6 shadow">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold">Current Rate</h2>
+            <button id="btnRefreshRate" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold">Refresh</button>
+          </div>
+          <div class="mt-4 space-y-2 text-slate-200">
+            <div>Buy: <span id="buyRate" class="font-mono">-</span> LBP</div>
+            <div>Sell: <span id="sellRate" class="font-mono">-</span> LBP</div>
+            <div class="text-lg">Mid (used): <span id="midRate" class="font-mono font-bold">-</span> LBP</div>
+            <div class="text-xs text-slate-400">Source: rate.onrender.com</div>
+            <p id="rateMsg" class="text-sm text-slate-300"></p>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 rounded-2xl p-6 shadow border border-slate-700">
+          <h2 class="text-xl font-semibold">Make an Exchange (System)</h2>
+          <p class="text-sm text-slate-400 mt-1">This will deduct from your wallet immediately.</p>
+          <div class="mt-4 space-y-3">
+            <select id="direction" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none">
+              <option value="USD_TO_LBP">USD → LBP</option>
+              <option value="LBP_TO_USD">LBP → USD</option>
+            </select>
+            <input id="amount" type="number" step="0.01" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Amount" />
+            <button id="btnExchange" class="w-full rounded-xl bg-amber-600 hover:bg-amber-500 px-4 py-2 font-semibold">
+              Submit Transaction
+            </button>
+            <p id="exMsg" class="text-sm text-slate-300"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 rounded-2xl p-6 shadow mt-8">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">My Transactions (System)</h2>
+          <div class="flex gap-2">
+            <button id="btnExportTx" class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 font-semibold">Export CSV</button>
+            <button id="btnRefreshTx" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold">Refresh</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-sm">
+            <thead class="text-slate-300">
+              <tr class="border-b border-slate-800">
+                <th class="text-left py-2">Date</th>
+                <th class="text-left py-2">Direction</th>
+                <th class="text-left py-2">From</th>
+                <th class="text-left py-2">To</th>
+                <th class="text-left py-2">Rate Used</th>
+              </tr>
+            </thead>
+            <tbody id="txBody" class="text-slate-200"></tbody>
+          </table>
+        </div>
+        <p id="txMsg" class="text-sm text-slate-300 mt-3"></p>
+      </div>
+    </div>
+
+    <div id="notificationsView" class="hidden mt-8">
+      <div class="bg-slate-900 rounded-2xl p-6 shadow max-w-3xl">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Inbox & Notifications</h2>
+          <button id="btnRefreshNotifs" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold">Refresh Inbox</button>
+        </div>
+        <p class="text-slate-300 mt-2 mb-6">System alerts and P2P trade updates.</p>
+        
+        <div id="notificationsList" class="space-y-3"></div>
+        <p id="notificationsMsg" class="text-sm text-slate-300 mt-3"></p>
+      </div>
+    </div>
+
+    <div id="statsView" class="hidden mt-8">
+      <div class="bg-slate-900 rounded-2xl p-6 shadow">
+        <h2 class="text-xl font-semibold">Rate Statistics (Selected Time Range)</h2>
+        <p class="text-slate-300 mt-2 text-sm">Defaults are loaded from your <span class="text-cyan-400 font-bold">Preferences</span>.</p>
+
+        <div class="grid md:grid-cols-3 gap-4 mt-4">
+          <div>
+            <label class="text-sm text-slate-300">Start (local time)</label>
+            <input id="statsStart" type="datetime-local" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none mt-1" />
+          </div>
+          <div>
+            <label class="text-sm text-slate-300">End (local time)</label>
+            <input id="statsEnd" type="datetime-local" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none mt-1" />
+          </div>
+          <div class="flex items-end">
+            <button id="btnLoadStats" class="w-full rounded-xl bg-cyan-600 hover:bg-cyan-500 px-4 py-2 font-semibold">Compute Stats</button>
+          </div>
+        </div>
+
+        <p id="statsMsg" class="text-sm text-slate-300 mt-3"></p>
+
+        <div class="mt-6 grid md:grid-cols-2 gap-6">
+          <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <h3 class="font-semibold mb-3">Indicators (mid-rate)</h3>
+            <div class="space-y-2 text-slate-200">
+              <div>Count: <span id="st_count" class="font-mono">-</span></div>
+              <div>Min: <span id="st_min" class="font-mono">-</span></div>
+              <div>Max: <span id="st_max" class="font-mono">-</span></div>
+              <div>Average: <span id="st_avg" class="font-mono">-</span></div>
+              <div>First: <span id="st_first" class="font-mono">-</span></div>
+              <div>Last: <span id="st_last" class="font-mono">-</span></div>
+              <div>% Change: <span id="st_pct" class="font-mono">-</span></div>
+              <div>Std Dev: <span id="st_std" class="font-mono">-</span></div>
+              <div>Trend (LBP/hour): <span id="st_trend" class="font-mono">-</span></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <h3 class="font-semibold mb-3">Mini Chart (mid-rate)</h3>
+            <canvas id="statsChart" width="600" height="220" class="w-full rounded-xl bg-slate-900"></canvas>
+            <p class="text-xs text-slate-400 mt-2">Chart uses snapshots in DB for that range.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="p2pView" class="hidden mt-8">
+      <div class="bg-slate-900 rounded-2xl p-6 shadow">
+        <h2 class="text-xl font-semibold">P2P Marketplace</h2>
+        <div class="grid lg:grid-cols-2 gap-6 mt-6">
+          <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <h3 class="font-semibold mb-3">Create an Offer</h3>
+            <p class="text-xs text-slate-400 mb-3">Funds will be locked in escrow when posted.</p>
+            <div class="space-y-3">
+              <select id="p2pOfferType" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none">
+                <option value="SELL_USD">SELL_USD (I give USD, I want LBP)</option>
+                <option value="SELL_LBP">SELL_LBP (I give LBP, I want USD)</option>
+              </select>
+              <input id="p2pAmount" type="number" step="0.01" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Amount I am selling" />
+              <input id="p2pRate" type="number" step="0.01" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Rate (LBP per 1 USD)" />
+              <button id="btnCreateOffer" class="w-full rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 px-4 py-2 font-semibold">Post Offer</button>
+              <p id="p2pCreateMsg" class="text-sm text-slate-300"></p>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">Open Offers</h3>
+              <button id="btnRefreshOpenOffers" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold">Refresh</button>
+            </div>
+            <div id="openOffersList" class="mt-4 space-y-3"></div>
+            <p id="p2pOpenMsg" class="text-sm text-slate-300 mt-3"></p>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-6 mt-6">
+          <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">My Offers</h3>
+              <button id="btnRefreshMyOffers" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold">Refresh</button>
+            </div>
+            <div id="myOffersList" class="mt-4 space-y-3"></div>
+            <p id="p2pMyOffersMsg" class="text-sm text-slate-300 mt-3"></p>
+          </div>
+
+          <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">My Trades</h3>
+              <button id="btnRefreshMyTrades" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold">Refresh</button>
+            </div>
+            <div class="overflow-x-auto mt-4">
+              <table class="w-full text-sm">
+                <thead class="text-slate-300">
+                  <tr class="border-b border-slate-800">
+                    <th class="text-left py-2">Role</th>
+                    <th class="text-left py-2">Offer Type</th>
+                    <th class="text-left py-2">Maker Gets</th>
+                  </tr>
+                </thead>
+                <tbody id="myTradesBody" class="text-slate-200"></tbody>
+              </table>
+            </div>
+            <p id="p2pMyTradesMsg" class="text-sm text-slate-300 mt-3"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="alertsView" class="hidden mt-8">
+      <div class="bg-slate-900 rounded-2xl p-6 shadow">
+        <h2 class="text-xl font-semibold">Rate Alerts</h2>
+        <div class="grid lg:grid-cols-3 gap-6 mt-6">
+          <div class="col-span-1 bg-slate-950/60 rounded-2xl p-4 border border-slate-800 h-fit">
+            <h3 class="font-semibold mb-3">Create Alert</h3>
+            <div class="space-y-3">
+              <select id="alertCondition" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none">
+                <option value="ABOVE">Rate goes ABOVE</option>
+                <option value="BELOW">Rate goes BELOW</option>
+              </select>
+              <input id="alertTarget" type="number" step="0.01" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Target Rate (e.g. 90000)" />
+              <button id="btnCreateAlert" class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 font-semibold">Set Alert</button>
+              <p id="alertCreateMsg" class="text-sm text-slate-300"></p>
+            </div>
+          </div>
+          <div class="col-span-2 bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">My Alerts</h3>
+              <button id="btnRefreshAlerts" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold text-sm">Refresh</button>
+            </div>
+            <div class="overflow-x-auto mt-4">
+              <table class="w-full text-sm">
+                <thead class="text-slate-300">
+                  <tr class="border-b border-slate-800"><th class="text-left py-2">Condition</th><th class="text-left py-2">Target Rate</th><th class="text-left py-2">Status</th><th class="text-left py-2">Action</th></tr>
+                </thead>
+                <tbody id="alertsBody" class="text-slate-200"></tbody>
+              </table>
+            </div>
+            <p id="alertsListMsg" class="text-sm text-slate-300 mt-3"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="watchlistView" class="hidden mt-8">
+      <div class="bg-slate-900 rounded-2xl p-6 shadow">
+        <h2 class="text-xl font-semibold">My Watchlist</h2>
+        <div class="grid lg:grid-cols-3 gap-6 mt-6">
+          <div class="col-span-1 bg-slate-950/60 rounded-2xl p-4 border border-slate-800 h-fit">
+            <h3 class="font-semibold mb-3">Add to Watchlist</h3>
+            <div class="space-y-3">
+              <select id="wlType" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none">
+                <option value="THRESHOLD">Rate Threshold</option>
+                <option value="DIRECTION">Currency Direction</option>
+              </select>
+              <input id="wlValue" type="text" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Value (e.g. 90000)" />
+              <input id="wlNote" type="text" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none" placeholder="Optional note" />
+              <button id="btnAddWatchlist" class="w-full rounded-xl bg-pink-600 hover:bg-pink-500 px-4 py-2 font-semibold">Save to Watchlist</button>
+              <p id="wlCreateMsg" class="text-sm text-slate-300"></p>
+            </div>
+          </div>
+          <div class="col-span-2 bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">Saved Items</h3>
+              <button id="btnRefreshWatchlist" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold text-sm">Refresh</button>
+            </div>
+            <div class="overflow-x-auto mt-4">
+              <table class="w-full text-sm">
+                <thead class="text-slate-300">
+                  <tr class="border-b border-slate-800"><th class="text-left py-2">Type</th><th class="text-left py-2">Value</th><th class="text-left py-2">Note</th><th class="text-left py-2">Action</th></tr>
+                </thead>
+                <tbody id="watchlistBody" class="text-slate-200"></tbody>
+              </table>
+            </div>
+            <p id="wlListMsg" class="text-sm text-slate-300 mt-3"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="logsView" class="hidden mt-8">
+      <div class="bg-slate-900 rounded-2xl p-6 shadow">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">My Audit Logs</h2>
+          <button id="btnRefreshLogs" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold">Refresh Logs</button>
+        </div>
+        <div class="overflow-x-auto bg-slate-950/60 rounded-2xl p-4 border border-slate-800 mt-4">
+          <table class="w-full text-sm">
+            <thead class="text-slate-300">
+              <tr class="border-b border-slate-800"><th class="text-left py-2">Timestamp</th><th class="text-left py-2">Action</th><th class="text-left py-2">Details</th></tr>
+            </thead>
+            <tbody id="myLogsBody" class="text-slate-200"></tbody>
+          </table>
+          <p id="myLogsMsg" class="text-sm text-slate-300 mt-3"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="prefsView" class="hidden mt-8">
+      <div class="bg-slate-900 rounded-2xl p-6 shadow max-w-lg">
+        <h2 class="text-xl font-semibold">My Preferences</h2>
+        <div class="space-y-4 mt-6">
+          <div>
+            <label class="text-sm font-semibold text-slate-300">Default Graph Interval</label>
+            <select id="prefInterval" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none mt-1">
+              <option value="HOURLY">Hourly</option>
+              <option value="DAILY">Daily</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-slate-300">Default Time Range (Days)</label>
+            <input id="prefDays" type="number" class="w-full rounded-xl bg-slate-800 px-4 py-2 outline-none mt-1" placeholder="e.g. 7" />
+          </div>
+          <button id="btnSavePrefs" class="w-full rounded-xl bg-cyan-600 hover:bg-cyan-500 px-4 py-2 font-semibold mt-4">Save Preferences</button>
+          <p id="prefsMsg" class="text-sm text-slate-300"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminView" class="hidden mt-8">
+      <div class="bg-slate-900 rounded-2xl p-6 shadow">
+        <h2 class="text-xl font-semibold text-rose-500 mb-6">System Admin Control Panel</h2>
+        
+        <div class="grid lg:grid-cols-2 gap-6 mt-6">
+          <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <h3 class="font-semibold mb-3">Consolidated Reports</h3>
+            <button id="btnLoadReports" class="w-full rounded-xl bg-indigo-700 hover:bg-indigo-600 px-4 py-2 font-semibold mb-4 text-sm">Generate Report</button>
+            <div class="space-y-2 text-slate-200">
+                <p>Total Platform Volume: <span id="repVol" class="font-mono text-emerald-400 font-bold">$-.--</span></p>
+                <p>Marketplace Offers: <span id="repOffers" class="font-mono text-slate-400">- Open / - Filled / - Cancelled</span></p>
+                <p class="mt-2 text-sm text-slate-400 uppercase tracking-wider font-semibold">Top Active Users</p>
+                <ul id="repTopUsers" class="list-disc list-inside ml-4 text-sm text-slate-300"></ul>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <h3 class="font-semibold mb-3">Data Backup & Migration</h3>
+            <p class="text-sm text-slate-400 mb-2">Status: <span id="backupStatus" class="font-bold text-slate-200">Checking...</span></p>
+            <p class="text-sm text-slate-400 mb-4">Last Backup: <span id="backupDate" class="font-bold text-slate-200">-</span></p>
+            <div class="flex gap-2">
+                <button id="btnBackup" class="w-full rounded-xl bg-cyan-700 hover:bg-cyan-600 px-4 py-2 font-semibold text-sm">Trigger Backup</button>
+                <button id="btnRestore" class="w-full rounded-xl bg-rose-700 hover:bg-rose-600 px-4 py-2 font-semibold text-sm">Restore Data</button>
+            </div>
+            <p id="backupMsg" class="text-sm mt-3 text-slate-300"></p>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6 mt-6">
+          <div class="col-span-1 bg-slate-950/60 rounded-2xl p-4 border border-slate-800 h-fit">
+            <h3 class="font-semibold mb-3">System Stats</h3>
+            <button id="btnLoadAdminStats" class="w-full rounded-xl bg-rose-700 hover:bg-rose-600 px-4 py-2 font-semibold mb-4 text-sm">Refresh Stats</button>
+            <div class="space-y-2 text-slate-200">
+              <div>Total Users: <span id="admTotalUsers" class="font-mono font-bold">-</span></div>
+              <div>Total Transctions: <span id="admTotalTx" class="font-mono font-bold">-</span></div>
+              <div>Total Vol Exchanged: <span id="admTotalVol" class="font-mono font-bold text-emerald-400">-</span> USD</div>
+            </div>
+          </div>
+          <div class="col-span-2 bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">Manage Users</h3>
+              <button id="btnLoadAdminUsers" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold text-sm">Refresh Users</button>
+            </div>
+            <div class="overflow-x-auto mt-4">
+              <table class="w-full text-sm">
+                <thead class="text-slate-300">
+                  <tr class="border-b border-slate-800"><th class="text-left py-2">ID / Email</th><th class="text-left py-2">Role</th><th class="text-left py-2">Status</th><th class="text-left py-2">Action</th></tr>
+                </thead>
+                <tbody id="adminUsersBody" class="text-slate-200"></tbody>
+              </table>
+            </div>
+            <p id="adminUsersMsg" class="text-sm text-slate-300 mt-3"></p>
+          </div>
+        </div>
+        
+        <div class="mt-6 bg-slate-950/60 rounded-2xl p-4 border border-slate-800">
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold">System Audit Logs</h3>
+            <button id="btnLoadAdminLogs" class="rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold text-sm">Refresh Logs</button>
+          </div>
+          <div class="overflow-x-auto mt-4 max-h-96 overflow-y-auto">
+            <table class="w-full text-sm">
+              <thead class="text-slate-300">
+                <tr class="border-b border-slate-800"><th class="text-left py-2">Timestamp</th><th class="text-left py-2">User ID</th><th class="text-left py-2">Action</th><th class="text-left py-2">Details</th></tr>
+              </thead>
+              <tbody id="adminLogsBody" class="text-slate-200"></tbody>
+            </table>
+          </div>
+          <p id="adminLogsMsg" class="text-sm text-slate-300 mt-3"></p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  const API = "";
+  const tokenKey = "exchange_jwt";
+
+  function getToken() { return localStorage.getItem(tokenKey); }
+  function setToken(t) { localStorage.setItem(tokenKey, t); }
+  function clearToken() { localStorage.removeItem(tokenKey); }
+
+  async function loadWallet() {
+    if (!getToken()) return;
+    try {
+      const user = await apiGet("/api/users/me");
+      document.getElementById("walUsd").textContent = "$" + Number(user.usd_balance).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+      document.getElementById("walLbp").textContent = Number(user.lbp_balance).toLocaleString() + " LBP";
+    } catch(e){}
+  }
+
+  async function setAuthState() {
+    const t = getToken();
+    const stateEl = document.getElementById("authState");
+    
+    document.getElementById("tabLogs").classList.add("hidden");
+    document.getElementById("tabPrefs").classList.add("hidden");
+    document.getElementById("tabAdmin").classList.add("hidden");
+    document.getElementById("tabNotifications").classList.add("hidden");
+    document.getElementById("userRoleBadge").classList.add("hidden");
+
+    if (t) {
+      try {
+        const user = await apiGet("/api/users/me");
+        stateEl.textContent = `Logged in (${user.email})`;
+        document.getElementById("tabLogs").classList.remove("hidden");
+        document.getElementById("tabPrefs").classList.remove("hidden");
+        document.getElementById("tabNotifications").classList.remove("hidden");
+        
+        loadWallet();
+        loadMyNotifications();
+        
+        if (user.role === "ADMIN") {
+          document.getElementById("tabAdmin").classList.remove("hidden");
+          document.getElementById("userRoleBadge").classList.remove("hidden");
+        }
+      } catch (e) {
+        stateEl.textContent = "Session expired";
+        clearToken();
+      }
+    } else {
+      stateEl.textContent = "Not logged in";
+      document.getElementById("walUsd").textContent = "$-.--";
+      document.getElementById("walLbp").textContent = "- LBP";
+    }
+  }
+
+  async function apiGet(path) {
+    const headers = {};
+    const t = getToken();
+    if (t) headers["Authorization"] = "Bearer " + t;
+    const res = await fetch(API + path, { headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || "Request failed");
+    return data;
+  }
+
+  // ====================== MFA API INTERCEPTOR ======================
+  // This cleverly catches 403 OTP errors and natively prompts the user!
+  async function apiPost(path, body = {}) {
+    const headers = { "Content-Type": "application/json" };
+    const t = getToken();
+    if (t) headers["Authorization"] = "Bearer " + t;
+    
+    let res = await fetch(API + path, { method: "POST", headers, body: JSON.stringify(body) });
+    let data = await res.json().catch(() => ({}));
+    
+    // Intercept MFA Requests
+    if (res.status === 403 && data.detail === "OTP required") {
+        const otp = prompt("Security Verification: Please enter the 6-digit OTP sent to your email.");
+        if (!otp) throw new Error("OTP input cancelled.");
+        
+        // Attach the OTP to the request body and try again
+        body.otp = otp;
+        res = await fetch(API + path, { method: "POST", headers, body: JSON.stringify(body) });
+        data = await res.json().catch(() => ({}));
+    }
+
+    if (!res.ok) throw new Error(data.detail || "Request failed");
+    return data;
+  }
+  
+  async function apiPut(path, body) {
+    const headers = { "Content-Type": "application/json" };
+    const t = getToken();
+    if (t) headers["Authorization"] = "Bearer " + t;
+    const res = await fetch(API + path, { method: "PUT", headers, body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || "Request failed");
+    return data;
+  }
+  
+  async function apiDelete(path) {
+    const headers = {};
+    const t = getToken();
+    if (t) headers["Authorization"] = "Bearer " + t;
+    const res = await fetch(API + path, { method: "DELETE", headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || "Request failed");
+    return data;
+  }
+
+  // ---------------- Dashboard ----------------
+  async function loadRate() {
+    const rateMsg = document.getElementById("rateMsg");
+    rateMsg.textContent = "";
+    try {
+      const r = await apiGet("/api/rate");
+      document.getElementById("buyRate").textContent = Number(r.buy_rate).toLocaleString();
+      document.getElementById("sellRate").textContent = Number(r.sell_rate).toLocaleString();
+      document.getElementById("midRate").textContent = Number(r.mid_rate).toLocaleString();
+      
+      if(getToken()) loadMyNotifications(); 
+    } catch (e) {
+      rateMsg.textContent = "Rate error: " + e.message;
+    }
+  }
+
+  function fmtMoney(direction, amount, isFrom) {
+    if (direction === "USD_TO_LBP") return isFrom ? `$${amount.toFixed(2)}` : `${amount.toLocaleString()} LBP`;
+    return isFrom ? `${amount.toLocaleString()} LBP` : `$${amount.toFixed(2)}`;
+  }
+
+  async function loadTx() {
+    const body = document.getElementById("txBody");
+    body.innerHTML = "";
+    try {
+      if (!getToken()) return;
+      const txs = await apiGet("/api/transactions/me");
+      for (const tx of txs) {
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-slate-800";
+        tr.innerHTML = `<td class="py-2">${new Date(tx.created_at).toLocaleString()}</td><td class="py-2">${tx.direction}</td><td class="py-2">${fmtMoney(tx.direction, tx.amount_from, true)}</td><td class="py-2">${fmtMoney(tx.direction, tx.amount_to, false)}</td><td class="py-2">${Number(tx.rate_used).toLocaleString()}</td>`;
+        body.appendChild(tr);
+      }
+    } catch (e) {}
+  }
+
+  document.getElementById("btnRefreshWallet").addEventListener("click", loadWallet);
+
+  document.getElementById("btnRegister").addEventListener("click", async () => {
+    try {
+      const email = document.getElementById("regEmail").value.trim();
+      const password = document.getElementById("regPass").value;
+      const is_admin = document.getElementById("regAdmin").checked;
+      const out = await apiPost("/api/auth/register", { email, password, is_admin });
+      setToken(out.access_token);
+      await setAuthState();
+      await loadTx(); await loadP2PAll();
+    } catch (e) { alert(e.message); }
+  });
+
+  document.getElementById("btnLogin").addEventListener("click", async () => {
+    try {
+      const email = document.getElementById("logEmail").value.trim();
+      const password = document.getElementById("logPass").value;
+      // Triggers OTP flow automatically inside apiPost
+      const out = await apiPost("/api/auth/login", { email, password });
+      setToken(out.access_token);
+      await setAuthState();
+      await loadTx(); await loadP2PAll();
+    } catch (e) { alert(e.message); }
+  });
+
+  document.getElementById("btnLogout").addEventListener("click", async () => {
+    clearToken();
+    await setAuthState();
+    document.getElementById("txBody").innerHTML = "";
+    showTab("dashboard");
+  });
+
+  document.getElementById("btnExchange").addEventListener("click", async () => {
+    try {
+      const direction = document.getElementById("direction").value;
+      const amount = Number(document.getElementById("amount").value);
+      await apiPost("/api/transactions", { direction, amount });
+      await loadTx();
+      await loadWallet();
+    } catch (e) { alert(e.message); }
+  });
+
+  document.getElementById("btnRefreshRate").addEventListener("click", loadRate);
+  document.getElementById("btnRefreshTx").addEventListener("click", loadTx);
+  document.getElementById("btnExportTx").addEventListener("click", async () => {
+    try {
+      const res = await fetch(API + "/api/transactions/export", { headers: { "Authorization": "Bearer " + getToken() } });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.style.display = "none"; a.href = url; a.download = "transactions.csv";
+      document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url);
+    } catch (e) { alert(e.message); }
+  });
+
+  // ---------------- Tabs ----------------
+  const views = ["dashboard", "stats", "p2p", "alerts", "watchlist", "notifications", "logs", "prefs", "admin"];
+  function showTab(activeId) {
+    views.forEach(v => document.getElementById(v + "View").classList.add("hidden"));
+    document.getElementById(activeId + "View").classList.remove("hidden");
+    views.forEach(v => {
+      const btn = document.getElementById("tab" + v.charAt(0).toUpperCase() + v.slice(1));
+      if (btn) btn.className = (activeId === v) ? "rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold flex items-center gap-2" : "rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2 font-semibold flex items-center gap-2";
+    });
+  }
+
+  document.getElementById("tabDashboard").addEventListener("click", () => showTab("dashboard"));
+  document.getElementById("tabStats").addEventListener("click", () => { showTab("stats"); applyDefaultStats(); });
+  document.getElementById("tabP2P").addEventListener("click", () => { showTab("p2p"); loadP2PAll(); });
+  document.getElementById("tabAlerts").addEventListener("click", () => { showTab("alerts"); loadMyAlerts(); });
+  document.getElementById("tabWatchlist").addEventListener("click", () => { showTab("watchlist"); loadMyWatchlist(); });
+  document.getElementById("tabNotifications").addEventListener("click", () => { showTab("notifications"); loadMyNotifications(); });
+  document.getElementById("tabLogs").addEventListener("click", () => { showTab("logs"); loadMyLogs(); });
+  document.getElementById("tabPrefs").addEventListener("click", () => { showTab("prefs"); loadMyPrefs(); });
+  document.getElementById("tabAdmin").addEventListener("click", () => { showTab("admin"); loadAdminData(); });
+  showTab("dashboard");
+
+  // ---------------- NOTIFICATIONS ----------------
+  async function loadMyNotifications() {
+    const list = document.getElementById("notificationsList");
+    const msg = document.getElementById("notificationsMsg");
+    const badge = document.getElementById("notifBadge");
+    if(!list) return; 
+    
+    list.innerHTML = ""; msg.textContent = "";
+    try {
+      if (!getToken()) return;
+      const notifs = await apiGet("/api/notifications/me");
+      
+      const unreadCount = notifs.filter(n => !n.is_read).length;
+      if (unreadCount > 0) {
+          badge.classList.remove("hidden");
+          badge.textContent = unreadCount;
+      } else {
+          badge.classList.add("hidden");
+      }
+
+      if (notifs.length === 0) { msg.textContent = "Your inbox is empty."; return; }
+
+      notifs.forEach(n => {
+        const div = document.createElement("div");
+        div.className = `p-4 rounded-xl border ${n.is_read ? 'bg-slate-900 border-slate-800 opacity-60' : 'bg-slate-800 border-indigo-500/50'}`;
+        div.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="font-semibold ${n.is_read ? 'text-slate-400' : 'text-slate-100'}">${n.message}</p>
+              <p class="text-xs text-slate-500 mt-1">${new Date(n.created_at).toLocaleString()}</p>
+            </div>
+            <div class="flex gap-2 shrink-0">
+              ${!n.is_read ? `<button class="readBtn text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded" data-id="${n.id}">Mark Read</button>` : ''}
+              <button class="deleteNotifBtn text-xs font-semibold text-rose-500 hover:bg-rose-900/30 px-3 py-1 rounded" data-id="${n.id}">Delete</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+
+      document.querySelectorAll(".readBtn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          await apiPut(`/api/notifications/${btn.getAttribute("data-id")}/read`, {});
+          loadMyNotifications();
+        });
+      });
+
+      document.querySelectorAll(".deleteNotifBtn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          await apiDelete(`/api/notifications/${btn.getAttribute("data-id")}`);
+          loadMyNotifications();
+        });
+      });
+
+    } catch(e) {}
+  }
+  document.getElementById("btnRefreshNotifs").addEventListener("click", loadMyNotifications);
+
+  // ---------------- Stats ----------------
+  async function applyDefaultStats() {
+    try {
+        if (!getToken()) return;
+        const prefs = await apiGet("/api/preferences/me");
+        const days = prefs.time_range_days || 7;
+        const end = new Date(); const start = new Date(); start.setDate(end.getDate() - days);
+        const fmtDt = (d) => { const pad = (n) => n.toString().padStart(2, '0'); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+        document.getElementById("statsStart").value = fmtDt(start); document.getElementById("statsEnd").value = fmtDt(end);
+    } catch(e) {}
+  }
+  function fmt(x) { return (x === null || x === undefined) ? "-" : (typeof x === "number" ? x.toLocaleString(undefined, { maximumFractionDigits: 2 }) : String(x)); }
+
+  document.getElementById("btnLoadStats").addEventListener("click", async () => {
+    try {
+      const start = document.getElementById("statsStart").value; const end = document.getElementById("statsEnd").value;
+      const stats = await apiGet(`/api/stats/rate?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+      document.getElementById("st_count").textContent = fmt(stats.count); document.getElementById("st_min").textContent = fmt(stats.min); document.getElementById("st_max").textContent = fmt(stats.max); document.getElementById("st_avg").textContent = fmt(stats.avg);
+      const series = await apiGet(`/api/stats/rate/series?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+      drawSeries(series);
+    } catch (e) { alert(e.message); }
+  });
+
+  function drawSeries(series) {
+    const canvas = document.getElementById("statsChart"); const ctx = canvas.getContext("2d"); ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!series || series.length < 2) { ctx.fillStyle = "rgba(226,232,240,0.9)"; ctx.fillText("Not enough data", 20, 30); return; }
+    const values = series.map(s => s.mid_rate); const mn = Math.min(...values); const mx = Math.max(...values);
+    const pad = 20; const w = canvas.width, h = canvas.height; const xStep = (w - pad * 2) / (values.length - 1); const scaleY = (h - pad * 2) / (mx - mn || 1);
+    ctx.strokeStyle = "rgba(148,163,184,0.4)"; ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h - pad); ctx.lineTo(w - pad, h - pad); ctx.stroke();
+    ctx.strokeStyle = "rgba(34,211,238,0.9)"; ctx.beginPath();
+    values.forEach((v, i) => { const x = pad + i * xStep; const y = (h - pad) - (v - mn) * scaleY; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke();
+  }
+
+  // ---------------- P2P ----------------
+  function offerSummary(o) {
+    const r = Number(o.rate_lbp_per_usd).toLocaleString(); const a = Number(o.amount).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    if (o.offer_type === "SELL_USD") return `SELL_USD: Sells $${a} for ~${(o.amount * o.rate_lbp_per_usd).toLocaleString()} LBP @ ${r}`;
+    return `SELL_LBP: Sells ${a} LBP for ~$${(o.amount / o.rate_lbp_per_usd).toFixed(2)} @ ${r}`;
+  }
+
+  async function loadP2PAll() {
+      if(!getToken()) return;
+      const openList = document.getElementById("openOffersList"); openList.innerHTML="";
+      const myList = document.getElementById("myOffersList"); myList.innerHTML="";
+      const tBody = document.getElementById("myTradesBody"); tBody.innerHTML="";
+
+      const open = await apiGet("/api/p2p/offers/open");
+      open.forEach(o => {
+          const div = document.createElement("div"); div.className="p-3 bg-slate-900 border border-slate-800 rounded-xl";
+          div.innerHTML = `<div class="font-semibold">${offerSummary(o)}</div><button class="acceptBtn mt-2 bg-emerald-600 px-3 py-1 rounded font-semibold text-sm" data-id="${o.id}">Accept</button>`;
+          openList.appendChild(div);
+      });
+      document.querySelectorAll(".acceptBtn").forEach(b => b.addEventListener("click", async () => {
+          try {
+            await apiPost(`/api/p2p/offers/${b.getAttribute("data-id")}/accept`, {});
+            loadP2PAll(); loadMyNotifications(); loadWallet();
+          } catch(e) { alert(e.message); }
+      }));
+
+      const my = await apiGet("/api/p2p/me/offers");
+      my.forEach(o => {
+          const div = document.createElement("div"); div.className="p-3 bg-slate-900 border border-slate-800 rounded-xl";
+          const canCancel = o.status==="OPEN";
+          div.innerHTML = `<div class="font-semibold">${offerSummary(o)} <span class="text-xs text-slate-400">(${o.status})</span></div>
+          <button class="cancelBtn mt-2 ${canCancel?'bg-rose-600':'bg-slate-700'} px-3 py-1 rounded font-semibold text-sm" data-id="${o.id}" ${canCancel?'':'disabled'}>Cancel</button>`;
+          myList.appendChild(div);
+      });
+      document.querySelectorAll(".cancelBtn").forEach(b => b.addEventListener("click", async () => {
+          try {
+            await apiPost(`/api/p2p/offers/${b.getAttribute("data-id")}/cancel`, {});
+            loadP2PAll(); loadMyNotifications(); loadWallet();
+          } catch(e) { alert(e.message); }
+      }));
+
+      const trades = await apiGet("/api/p2p/me/trades");
+      trades.forEach(t => {
+          const tr = document.createElement("tr"); tr.className="border-b border-slate-800";
+          tr.innerHTML = `<td class="py-2">M:${t.maker_user_id} T:${t.taker_user_id}</td><td class="py-2">${t.offer_type}</td><td class="py-2">${t.maker_gets_amount.toFixed(2)} ${t.maker_gets_currency}</td>`;
+          tBody.appendChild(tr);
+      });
+  }
+
+  document.getElementById("btnCreateOffer").addEventListener("click", async () => {
+      try {
+        const type = document.getElementById("p2pOfferType").value;
+        const amt = Number(document.getElementById("p2pAmount").value);
+        const rate = Number(document.getElementById("p2pRate").value);
+        await apiPost("/api/p2p/offers", {offer_type: type, amount: amt, rate_lbp_per_usd: rate});
+        loadP2PAll(); loadWallet();
+      } catch(e) { alert(e.message); }
+  });
+  document.getElementById("btnRefreshOpenOffers").addEventListener("click", loadP2PAll);
+  document.getElementById("btnRefreshMyOffers").addEventListener("click", loadP2PAll);
+  document.getElementById("btnRefreshMyTrades").addEventListener("click", loadP2PAll);
+
+  // ---------------- ALERTS & WATCHLIST ----------------
+  async function loadMyAlerts() {
+      if(!getToken()) return;
+      const body = document.getElementById("alertsBody"); body.innerHTML="";
+      const alerts = await apiGet("/api/alerts/me");
+      alerts.forEach(a => {
+          const tr = document.createElement("tr"); tr.className="border-b border-slate-800";
+          tr.innerHTML=`<td class="py-2">${a.condition}</td><td class="py-2">${a.target_rate}</td><td class="py-2 ${a.is_active?'text-emerald-400':'text-slate-500'}">${a.is_active?'Active':'Triggered'}</td><td class="py-2"><button class="delAlert text-rose-500" data-id="${a.id}">Del</button></td>`;
+          body.appendChild(tr);
+      });
+      document.querySelectorAll(".delAlert").forEach(b => b.addEventListener("click", async () => {
+          await apiDelete(`/api/alerts/${b.getAttribute("data-id")}`); loadMyAlerts();
+      }));
+  }
+  document.getElementById("btnCreateAlert").addEventListener("click", async () => {
+      try {
+        const c = document.getElementById("alertCondition").value; const t = Number(document.getElementById("alertTarget").value);
+        await apiPost("/api/alerts", {condition: c, target_rate: t}); loadMyAlerts();
+      } catch(e) { alert(e.message); }
+  });
+  document.getElementById("btnRefreshAlerts").addEventListener("click", loadMyAlerts);
+
+  async function loadMyWatchlist() {
+      if(!getToken()) return;
+      const body = document.getElementById("watchlistBody"); body.innerHTML="";
+      const items = await apiGet("/api/watchlist/me");
+      items.forEach(i => {
+          const tr = document.createElement("tr"); tr.className="border-b border-slate-800";
+          tr.innerHTML=`<td class="py-2">${i.item_type}</td><td class="py-2">${i.value}</td><td class="py-2">${i.note||'-'}</td><td class="py-2"><button class="delWl text-rose-500" data-id="${i.id}">Del</button></td>`;
+          body.appendChild(tr);
+      });
+      document.querySelectorAll(".delWl").forEach(b => b.addEventListener("click", async () => {
+          await apiDelete(`/api/watchlist/${b.getAttribute("data-id")}`); loadMyWatchlist();
+      }));
+  }
+  document.getElementById("btnAddWatchlist").addEventListener("click", async () => {
+      try {
+        const t = document.getElementById("wlType").value; const v = document.getElementById("wlValue").value; const n = document.getElementById("wlNote").value;
+        await apiPost("/api/watchlist", {item_type: t, value: v, note: n}); loadMyWatchlist();
+      } catch(e) { alert(e.message); }
+  });
+  document.getElementById("btnRefreshWatchlist").addEventListener("click", loadMyWatchlist);
+
+  // ---------------- MY LOGS ----------------
+  async function loadMyLogs() {
+    const body = document.getElementById("myLogsBody"); body.innerHTML = "";
+    try {
+      const logs = await apiGet("/api/logs/me");
+      logs.forEach(l => {
+        const tr = document.createElement("tr"); tr.className = "border-b border-slate-800";
+        tr.innerHTML = `<td class="py-2">${new Date(l.created_at).toLocaleString()}</td><td class="py-2"><span class="bg-indigo-900 px-2 rounded text-xs font-bold">${l.action}</span></td><td class="py-2">${l.details}</td>`;
+        body.appendChild(tr);
+      });
+    } catch(e) {}
+  }
+  document.getElementById("btnRefreshLogs").addEventListener("click", loadMyLogs);
+
+  // ---------------- PREFERENCES ----------------
+  async function loadMyPrefs() {
+    try {
+        const prefs = await apiGet("/api/preferences/me");
+        if(prefs) { document.getElementById("prefInterval").value = prefs.graph_interval; document.getElementById("prefDays").value = prefs.time_range_days; }
+    } catch (e) {}
+  }
+  document.getElementById("btnSavePrefs").addEventListener("click", async () => {
+      const interval = document.getElementById("prefInterval").value; const days = Number(document.getElementById("prefDays").value);
+      await apiPut("/api/preferences/me", { graph_interval: interval, time_range_days: days }); alert("Saved");
+  });
+
+  // ---------------- ADMIN PANEL ----------------
+  async function loadAdminReports() {
+    try {
+        const rep = await apiGet("/api/admin/reports");
+        document.getElementById("repVol").textContent = "$" + Number(rep.total_usd_volume).toLocaleString(undefined, {maximumFractionDigits:2});
+        document.getElementById("repOffers").textContent = `${rep.offers_open} Open / ${rep.offers_filled} Filled / ${rep.offers_cancelled} Cancelled`;
+        const ul = document.getElementById("repTopUsers");
+        ul.innerHTML = "";
+        rep.most_active_users.forEach(u => {
+            const li = document.createElement("li");
+            li.textContent = `${u.email} (${u.transactions} txs)`;
+            ul.appendChild(li);
+        });
+    } catch(e) {}
+  }
+  
+  async function loadBackupStatus() {
+    try {
+        const b = await apiGet("/api/admin/backup/status");
+        document.getElementById("backupStatus").textContent = b.status;
+        document.getElementById("backupDate").textContent = b.last_backup ? new Date(b.last_backup).toLocaleString() : "Never";
+    } catch(e) {}
+  }
+
+  document.getElementById("btnLoadReports").addEventListener("click", loadAdminReports);
+  document.getElementById("btnBackup").addEventListener("click", async () => {
+    try { 
+        await apiPost("/api/admin/backup", {}); 
+        document.getElementById("backupMsg").textContent = "Backup created ✅"; 
+        loadBackupStatus(); 
+    } catch(e) { document.getElementById("backupMsg").textContent = e.message; }
+  });
+  document.getElementById("btnRestore").addEventListener("click", async () => {
+    try { 
+        await apiPost("/api/admin/restore", {}); 
+        document.getElementById("backupMsg").textContent = "Restored successfully ✅ (Restart Server)"; 
+        loadBackupStatus(); 
+    } catch(e) { document.getElementById("backupMsg").textContent = e.message; }
+  });
+
+  async function loadAdminData() {
+    document.getElementById("adminUsersBody").innerHTML = ""; document.getElementById("adminLogsBody").innerHTML = "";
+    
+    loadAdminReports();
+    loadBackupStatus();
+
+    try {
+        const stats = await apiGet("/api/admin/stats");
+        document.getElementById("admTotalUsers").textContent = stats.total_users; document.getElementById("admTotalTx").textContent = stats.total_transactions; document.getElementById("admTotalVol").textContent = Number(stats.total_volume_usd).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    } catch(e) {}
+    try {
+        const users = await apiGet("/api/admin/users"); const body = document.getElementById("adminUsersBody");
+        users.forEach(u => {
+            const tr = document.createElement("tr"); tr.className = "border-b border-slate-800";
+            tr.innerHTML = `<td class="py-2">#${u.id} - ${u.email}</td><td class="py-2">${u.role}</td><td class="py-2 ${u.status === 'ACTIVE' ? 'text-emerald-400' : 'text-rose-500'}">${u.status}</td>
+              <td class="py-2"><button class="adminStatBtn ${u.status === 'ACTIVE'?'text-rose-500':'text-emerald-400'}" data-id="${u.id}" data-action="${u.status === 'ACTIVE'?'SUSPENDED':'ACTIVE'}">${u.status === 'ACTIVE'?'Suspend':'Reactivate'}</button></td>`;
+            body.appendChild(tr);
+        });
+        document.querySelectorAll(".adminStatBtn").forEach(btn => btn.addEventListener("click", async () => {
+            await apiPut(`/api/admin/users/${btn.getAttribute("data-id")}/status?status=${btn.getAttribute("data-action")}`, {}); loadAdminData();
+        }));
+    } catch(e) {}
+    try {
+        const logs = await apiGet("/api/admin/logs"); const body = document.getElementById("adminLogsBody");
+        logs.forEach(l => {
+            const tr = document.createElement("tr"); tr.className = "border-b border-slate-800";
+            tr.innerHTML = `<td class="py-2">${new Date(l.created_at).toLocaleString()}</td><td class="py-2">#${l.user_id||'N/A'}</td><td class="py-2">${l.action}</td><td class="py-2">${l.details}</td>`;
+            body.appendChild(tr);
+        });
+    } catch(e) {}
+  }
+  document.getElementById("btnLoadAdminStats").addEventListener("click", loadAdminData);
+  document.getElementById("btnLoadAdminUsers").addEventListener("click", loadAdminData);
+  document.getElementById("btnLoadAdminLogs").addEventListener("click", loadAdminData);
+
+  // Init
+  setAuthState();
+  loadRate();
+</script>
+</body>
+</html>
