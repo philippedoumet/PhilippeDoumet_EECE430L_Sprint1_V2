@@ -9,10 +9,9 @@ from .models import User
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
-# For an assignment, this is OK. In real apps, put it in env variables.
 JWT_SECRET = "CHANGE_ME_TO_SOMETHING_RANDOM"
 JWT_ALG = "HS256"
-JWT_EXPIRE_MIN = 60 * 24  # 24 hours
+JWT_EXPIRE_MIN = 60 * 24  
 
 bearer = HTTPBearer()
 

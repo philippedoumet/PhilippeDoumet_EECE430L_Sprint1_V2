@@ -2,8 +2,6 @@ import smtplib
 from email.message import EmailMessage
 import os
 
-# For security on your Ubuntu machine, it's best to use environment variables, 
-# but for testing your assignment locally, you can hardcode them here.
 GMAIL_USER = os.environ.get("GMAIL_USER", "doumetphilippe@gmail.com")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "niek jvnz nomm cgxi")
 
